@@ -30,8 +30,8 @@ export const routes: Routes = [
       },
       {
         path: 'requisiciones',
-        loadComponent: () => import('./modules/proximamente/proximamente.component')
-          .then(m => m.ProximamenteComponent)
+        loadComponent: () => import('./modules/requisiciones/requisiciones.component')
+          .then(m => m.RequisicionesComponent)
       },
       {
         path: 'almacen',

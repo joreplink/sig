@@ -138,3 +138,92 @@ class MovimientoBien(db.Model):
             'usuario':     self.usuario.nombre_completo if self.usuario else None,
             'created_at':  self.created_at.isoformat()
         }
+
+
+class Requisicion(db.Model):
+    __tablename__ = 'requisiciones'
+
+    id             = db.Column(db.Integer, primary_key=True)
+    folio          = db.Column(db.String(20), nullable=False, unique=True)
+    titulo         = db.Column(db.String(200), nullable=False)
+    descripcion    = db.Column(db.Text)
+    solicitante_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    area_id        = db.Column(db.Integer, db.ForeignKey('areas.id'))
+    periodo        = db.Column(db.String(10))
+    total          = db.Column(db.Numeric(14,2), default=0)
+    created_at     = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at     = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    solicitante = db.relationship('Usuario',  foreign_keys=[solicitante_id])
+    area        = db.relationship('Area',     foreign_keys=[area_id])
+    partidas    = db.relationship('PartidaRequisicion', backref='requisicion',
+                                  lazy='dynamic', cascade='all, delete-orphan')
+    estatus_log = db.relationship('EstatusRequisicion', backref='requisicion',
+                                  lazy='dynamic',
+                                  order_by='EstatusRequisicion.created_at.desc()')
+
+    @property
+    def estatus_actual(self):
+        return self.estatus_log.first()
+
+    def to_dict(self):
+        estatus = self.estatus_actual
+        return {
+            'id':          self.id,
+            'folio':       self.folio,
+            'titulo':      self.titulo,
+            'descripcion': self.descripcion,
+            'solicitante': self.solicitante.nombre_completo,
+            'area':        self.area.nombre if self.area else None,
+            'area_id':     self.area_id,
+            'periodo':     self.periodo,
+            'total':       str(self.total),
+            'estatus':     estatus.estatus if estatus else 'borrador',
+            'created_at':  self.created_at.isoformat()
+        }
+
+
+class PartidaRequisicion(db.Model):
+    __tablename__ = 'partidas_requisicion'
+
+    id              = db.Column(db.Integer, primary_key=True)
+    requisicion_id  = db.Column(db.Integer, db.ForeignKey('requisiciones.id'), nullable=False)
+    concepto        = db.Column(db.String(300), nullable=False)
+    cantidad        = db.Column(db.Numeric(10,2), nullable=False)
+    unidad          = db.Column(db.String(50))
+    precio_unitario = db.Column(db.Numeric(12,2), nullable=False)
+    subtotal        = db.Column(db.Numeric(14,2), nullable=False)
+
+    def to_dict(self):
+        return {
+            'id':              self.id,
+            'concepto':        self.concepto,
+            'cantidad':        str(self.cantidad),
+            'unidad':          self.unidad,
+            'precio_unitario': str(self.precio_unitario),
+            'subtotal':        str(self.subtotal)
+        }
+
+
+class EstatusRequisicion(db.Model):
+    __tablename__ = 'estatus_requisicion'
+
+    id             = db.Column(db.Integer, primary_key=True)
+    requisicion_id = db.Column(db.Integer, db.ForeignKey('requisiciones.id'), nullable=False)
+    estatus        = db.Column(db.Enum('borrador','pendiente','en_revision',
+                                       'aprobada','rechazada','completada','cancelada'),
+                               nullable=False)
+    observaciones  = db.Column(db.Text)
+    usuario_id     = db.Column(db.Integer, db.ForeignKey('usuarios.id'))
+    created_at     = db.Column(db.DateTime, default=datetime.utcnow)
+
+    usuario = db.relationship('Usuario', foreign_keys=[usuario_id])
+
+    def to_dict(self):
+        return {
+            'id':             self.id,
+            'estatus':        self.estatus,
+            'observaciones':  self.observaciones,
+            'usuario':        self.usuario.nombre_completo if self.usuario else None,
+            'created_at':     self.created_at.isoformat()
+        }

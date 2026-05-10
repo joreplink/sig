@@ -17,7 +17,7 @@ def create_app():
     app.config['JWT_SECRET_KEY']          = os.getenv('JWT_SECRET_KEY', 'jwt-dev-key')
     app.config['SQLALCHEMY_DATABASE_URI'] = (
         f"mysql+pymysql://{os.getenv('DB_USER','jorep')}:"
-        f"{os.getenv('DB_PASSWORD','T3cn0l061as')}@"
+        f"{os.getenv('DB_PASSWORD','')}@"
         f"{os.getenv('DB_HOST','localhost')}:"
         f"{os.getenv('DB_PORT','3306')}/"
         f"{os.getenv('DB_NAME','sistema_institucional')}"
@@ -30,13 +30,15 @@ def create_app():
          origins=os.getenv('CORS_ORIGINS', 'http://localhost:4200'),
          supports_credentials=True)
 
-    from app.modules.auth.routes     import auth_bp
-    from app.modules.usuarios.routes import usuarios_bp
-    from app.modules.bienes.routes   import bienes_bp
+    from app.modules.auth.routes          import auth_bp
+    from app.modules.usuarios.routes      import usuarios_bp
+    from app.modules.bienes.routes        import bienes_bp
+    from app.modules.requisiciones.routes import requisiciones_bp
 
-    app.register_blueprint(auth_bp,     url_prefix='/api/auth')
-    app.register_blueprint(usuarios_bp, url_prefix='/api/usuarios')
-    app.register_blueprint(bienes_bp,   url_prefix='/api/bienes')
+    app.register_blueprint(auth_bp,          url_prefix='/api/auth')
+    app.register_blueprint(usuarios_bp,      url_prefix='/api/usuarios')
+    app.register_blueprint(bienes_bp,        url_prefix='/api/bienes')
+    app.register_blueprint(requisiciones_bp, url_prefix='/api/requisiciones')
 
     @app.route('/api/ping')
     def ping():
